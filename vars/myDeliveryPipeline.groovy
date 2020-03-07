@@ -1,19 +1,48 @@
 def call(Map pipelineParams) {
 
     pipeline {
-        agent any
-        stages {
-            stage('checkout git') {
-                steps {
-                    git branch: pipelineParams.branch, credentialsId: 'GitCredentials', url: pipelineParams.scmUrl
-                }
-            }
+        podTemplate(yaml: """
+            kind: Pod
+            spec:
+            containers:
+            - name: maven
+                image: us.gcr.io/sharedinfra-svc-corp00/devopsjenkins/devops-jenkins-slave-maven:0.0.5
+                command:
+                - cat
+                tty: true
+            - name: kaniko
+                image: us.gcr.io/sharedinfra-svc-corp00/devopsjenkins/kaniko-executor:debug
+                imagePullPolicy: Always
+                command:
+                - /busybox/cat
+                tty: true
+                volumeMounts:
+                - name: jenkinsgcp
+                    mountPath: /var/run/secrets/jenkinsgcp
+                env:
+                - name: GOOGLE_APPLICATION_CREDENTIALS
+                    value: /var/run/secrets/jenkinsgcp/credentials.json
+            volumes:
+                - name: jenkinsgcp
+                secret:
+                    secretName: jenkinsgcp
+            """
+        ) 
 
-            stage('build') {
-                steps {
-                    sh 'mvn clean package -DskipTests=true'
+        node(POD_LABEL) {
+                stage('do some Docker work') {
+                    container('maven') {  
+                        library identifier: 'custom-lib@master', retriever: modernSCM(
+                                [$class: 'GitSCMSource',
+                                remote: 'https://github.com/jawlitkp/jenkins-pipeline-shared-lib-sample.git'
+                                ]
+                            )    
+                        printBuildinfo {
+                                name = "Sample Name"
+                        }             
+                    }
                 }
-            }
         }
     }
+
 }
