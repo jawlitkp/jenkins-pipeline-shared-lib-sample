@@ -7,32 +7,13 @@ def call(body) {
     body()
 
     pipeline {
-        podTemplate(yaml: """
-            kind: Pod
-            spec:
-            containers:
-            - name: maven
-                image: us.gcr.io/sharedinfra-svc-corp00/devopsjenkins/devops-jenkins-slave-maven:0.0.5
-                command:
-                - cat
-                tty: true
-            - name: kaniko
-                image: us.gcr.io/sharedinfra-svc-corp00/devopsjenkins/kaniko-executor:debug
-                imagePullPolicy: Always
-                command:
-                - /busybox/cat
-                tty: true
-                volumeMounts:
-                - name: jenkinsgcp
-                    mountPath: /var/run/secrets/jenkinsgcp
-                env:
-                - name: GOOGLE_APPLICATION_CREDENTIALS
-                    value: /var/run/secrets/jenkinsgcp/credentials.json
-            volumes:
-                - name: jenkinsgcp
-                secret:
-                    secretName: jenkinsgcp
-            """
-        ) 
+        podTemplate(label: 'mypod', containers: [
+            containerTemplate(name: 'docker', image: 'docker', ttyEnabled: true, command: 'cat'),
+            containerTemplate(name: 'kubectl', image: 'lachlanevenson/k8s-kubectl:v1.8.0', command: 'cat', ttyEnabled: true),
+            containerTemplate(name: 'helm', image: 'lachlanevenson/k8s-helm:latest', command: 'cat', ttyEnabled: true)
+        ],
+        volumes: [
+            hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock'),
+        ]) 
     }
 }
