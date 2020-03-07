@@ -15,5 +15,16 @@ def call(body) {
         volumes: [
             hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock'),
         ]) 
+        node('mypod') {
+            stage('do some Docker work') {
+                container('docker') {                    
+                        sh """
+                            docker pull ubuntu
+                            docker tag ubuntu ${env.DOCKER_HUB_USER}/ubuntu:${env.BUILD_NUMBER}
+                            """
+                        sh "docker login -u ${env.DOCKER_HUB_USER} -p ${env.DOCKER_HUB_PASSWORD} "
+                        sh "docker push ${env.DOCKER_HUB_USER}/ubuntu:${env.BUILD_NUMBER} "
+                }
+            }
     }
 }
