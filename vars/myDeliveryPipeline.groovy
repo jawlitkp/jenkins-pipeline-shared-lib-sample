@@ -26,5 +26,6 @@ def call(body) {
                         sh "docker push ${env.DOCKER_HUB_USER}/ubuntu:${env.BUILD_NUMBER} "
                 }
             }
+        }
     }
 }
