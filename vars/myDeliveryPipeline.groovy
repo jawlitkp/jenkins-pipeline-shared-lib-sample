@@ -34,8 +34,23 @@ spec:
         secretName: jenkinsgcp
 """
   ) 
-        stage('do some Docker work') {
 
+  
+{
+  node(POD_LABEL) {
+        stage('do some Docker work') {
+            container('maven') {  
+                  library identifier: 'custom-lib@master', retriever: modernSCM(
+                        [$class: 'GitSCMSource',
+                        remote: 'https://github.com/jawlitkp/jenkins-pipeline-shared-lib-sample.git'
+                        ]
+                    )    
+                  printBuildinfo {
+                        name = "Sample Name"
+                  }             
+            }
         }
+  }
+}
 }
 }
