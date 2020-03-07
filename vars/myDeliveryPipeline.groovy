@@ -33,24 +33,25 @@ spec:
       secret:
         secretName: jenkinsgcp
 """
-  ) 
+  ) {
 
-  
-{
   node(POD_LABEL) {
-        stage('do some Docker work') {
-            container('maven') {  
-                  library identifier: 'custom-lib@master', retriever: modernSCM(
-                        [$class: 'GitSCMSource',
-                        remote: 'https://github.com/jawlitkp/jenkins-pipeline-shared-lib-sample.git'
-                        ]
-                    )    
-                  printBuildinfo {
-                        name = "Sample Name"
-                  }             
-            }
-        }
+
+    stage ('Checkout Code') {
+        git credentialsId: 'a6086650-deb3-4b91-85b4-d442f88300e7', branch: 'master', poll: false, url: 'https://github.bedbath.com/bbbydevopscicd/docker-hello-world-spring-boot.git'
+    }
+
+    stage('Build Project') {
+      container('maven') {
+        sh "'mvn' -Dmaven.test.failure.ignore clean package"
+      }
+    }
+
+    stage('Build with Kaniko') {
+      container('kaniko') {
+        sh '/kaniko/executor -c `pwd` --cache=true --destination=us.gcr.io/sharedinfra-svc-corp00/devopsjenkins/docker-hello-world-spring-boot'
+      }
+    }
   }
-}
 }
 }
